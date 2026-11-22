@@ -60,6 +60,8 @@ main {
   margin-bottom: 12px;
 }
 
+.card-head .spacer { flex: 1; }
+
 .hint { color: var(--muted); font-size: 12px; }
 
 .row { display: flex; align-items: center; gap: 10px; }

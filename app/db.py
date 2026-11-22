@@ -36,6 +36,15 @@ CREATE TABLE IF NOT EXISTS current_wet (
     version INTEGER NOT NULL REFERENCES packages(version) ON DELETE CASCADE,
     PRIMARY KEY (row, col)
 ) WITHOUT ROWID;
+
+-- Monotonic generation marker.  Only /api/reset bumps it; coverage-index
+-- compaction snapshots it before computing and re-checks it while holding
+-- the write lock, so a reset during computation voids the compaction round
+-- even if the same version numbers are imported again afterwards.
+CREATE TABLE IF NOT EXISTS meta (
+    key   TEXT PRIMARY KEY,
+    value INTEGER NOT NULL
+);
 """
 
 RTREE_SQL = """
@@ -76,6 +85,7 @@ def connect(path: str | Path) -> sqlite3.Connection:
 
 def init_db(conn: sqlite3.Connection, prefer_rtree: bool = True) -> None:
     conn.executescript(SCHEMA)
+    conn.execute("INSERT OR IGNORE INTO meta (key, value) VALUES ('epoch', 0)")
     # The choice of coverage index is made once, when the database file is
     # first created; reopening an existing file reuses whatever is there.
     has_table = conn.execute(

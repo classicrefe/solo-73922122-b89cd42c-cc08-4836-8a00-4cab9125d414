@@ -48,7 +48,8 @@ async function loadPackages() {
   const data = await api("/api/packages");
   const tbody = $("#package-rows");
   $("#package-stats").textContent =
-    `共 ${data.packages.length} 个包 · 最高版号 ${data.max_version} · 现行积水格 ${data.total_current_wet}`;
+    `共 ${data.packages.length} 个包 · 覆盖索引矩形 ${data.coverage_rect_count} 个 · ` +
+    `最高版号 ${data.max_version} · 现行积水格 ${data.total_current_wet}`;
 
   if (!data.packages.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty">尚无巡查包</td></tr>';
@@ -244,6 +245,42 @@ async function queryCell(event) {
   }
 }
 
+/* ---------------- compact coverage index ---------------- */
+
+async function compactCoverage() {
+  const btn = $("#compact-btn");
+  const out = $("#compact-result");
+  btn.disabled = true;
+  try {
+    const result = await api("/api/compact", { method: "POST" });
+    if (result.status === "stale") {
+      showResult(out, "warn",
+        `<span class="status-badge status-unchanged">已作废</span>
+         <strong> 本轮压缩未生效</strong>
+         <p>${esc(result.message)}</p>
+         <p class="hint">压缩期间演示库被清空，即使重新用了同一版号本轮也不作数；未删除任何索引项，请重新压缩。</p>`);
+    } else if (result.status === "noop") {
+      showResult(out, "ok",
+        `<span class="status-badge status-dry">无需压缩</span>
+         <strong> 覆盖索引 ${result.rects_before} 个矩形</strong>
+         <p>${esc(result.message)}</p>`);
+    } else {
+      showResult(out, "ok",
+        `<span class="status-badge status-dry">已压缩</span>
+         <strong> 覆盖索引 ${result.rects_before} → ${result.rects_after} 个矩形</strong>
+         <p>${esc(result.message)}</p>
+         <p class="hint">已巡查范围、单格干湿与生效版号不变；框查现在只取剩余 ${result.rects_after} 个矩形。</p>`);
+    }
+    await loadPackages();
+    await queryBox();
+  } catch (err) {
+    showResult(out, "bad",
+      `<strong>压缩失败，本轮改动已回滚</strong><p>${esc(err.message)}</p>`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 /* ---------------- samples / wiring ---------------- */
 
 async function loadSample(name) {
@@ -267,6 +304,7 @@ async function resetDemo() {
     return;
   }
   out.hidden = true;
+  $("#compact-result").hidden = true;
   $("#box-summary").textContent = "已清空，可重新导入示例。";
   $("#wet-rows").innerHTML = '<tr><td colspan="3" class="empty">尚未框查</td></tr>';
   $("#cell-result").hidden = true;
@@ -289,6 +327,7 @@ function wire() {
     btn.addEventListener("click", () => loadSample(btn.dataset.sample));
   });
   $("#reset-btn").addEventListener("click", resetDemo);
+  $("#compact-btn").addEventListener("click", compactCoverage);
   $("#box-form").addEventListener("submit", queryBox);
   $("#cell-form").addEventListener("submit", queryCell);
   $("#package-json").addEventListener("paste", () => setTimeout(() => { $("#import-result").hidden = true; }, 0));

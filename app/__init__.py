@@ -7,6 +7,7 @@ from pathlib import Path
 
 from flask import Flask, current_app, jsonify, render_template, request
 
+from .compact import compact_coverage
 from .db import close_db, connect, get_db, init_db
 from .parsing import MAX_WET_CELLS, PackageError, parse_package
 from .repository import (
@@ -93,6 +94,13 @@ def create_app(config: dict | None = None) -> Flask:
             }
         )
 
+    @app.post("/api/compact")
+    def compact():
+        # Removes coverage_rects rows that higher-version rectangles fully
+        # cover.  Package records and digests are kept; the compute phase
+        # runs without the write lock and the delete is one transaction.
+        return jsonify(compact_coverage(get_db()))
+
     @app.post("/api/reset")
     def reset():
         # Demo helper only.  Refuses to run unless explicitly enabled.
@@ -104,6 +112,12 @@ def create_app(config: dict | None = None) -> Flask:
             conn.execute("DELETE FROM current_wet")
             conn.execute("DELETE FROM coverage_rects")
             conn.execute("DELETE FROM packages")
+            # Bumping the epoch voids any compaction round that already
+            # read its snapshot, even if the same versions get re-imported.
+            conn.execute(
+                "INSERT INTO meta (key, value) VALUES ('epoch', 1) "
+                "ON CONFLICT(key) DO UPDATE SET value = value + 1"
+            )
         except Exception:
             conn.execute("ROLLBACK")
             raise

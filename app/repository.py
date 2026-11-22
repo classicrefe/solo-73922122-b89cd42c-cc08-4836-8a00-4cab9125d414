@@ -346,6 +346,7 @@ def list_packages(conn: sqlite3.Connection) -> dict:
         ).fetchall()
     )
     total_current_wet = sum(current_counts.values())
+    rect_count = conn.execute("SELECT COUNT(*) FROM coverage_rects").fetchone()[0]
     return {
         "packages": [
             {
@@ -365,4 +366,5 @@ def list_packages(conn: sqlite3.Connection) -> dict:
         ],
         "max_version": _max_version(conn),
         "total_current_wet": total_current_wet,
+        "coverage_rect_count": rect_count,
     }

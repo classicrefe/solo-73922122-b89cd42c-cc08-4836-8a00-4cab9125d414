@@ -1,0 +1,19 @@
+{
+  "version": 9,
+  "coverage": {
+    "row_start": 0,
+    "row_end": 20,
+    "col_start": 0,
+    "col_end": 30
+  },
+  "wet_cells": [
+    [
+      8,
+      5
+    ],
+    [
+      9,
+      5
+    ]
+  ]
+}

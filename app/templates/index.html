@@ -32,6 +32,9 @@
         <button class="chip" data-sample="v5-late.json" type="button">v5 旧包晚到</button>
         <button class="chip" data-sample="v7-retry.json" type="button">v7 同内容重传</button>
         <button class="chip danger" data-sample="v7-conflict.json" type="button">v7 异内容</button>
+        <button class="chip" data-sample="v8-south.json" type="button">v8 南半幅复测</button>
+        <button class="chip" data-sample="v9-north.json" type="button">v9 北半幅复测</button>
+        <button class="chip" data-sample="v4-late.json" type="button">v4 旧包晚到</button>
         <button class="chip" id="reset-btn" type="button">清空演示库</button>
       </span>
     </div>
@@ -42,7 +45,11 @@
     <div class="card-head">
       <h2>2 · 已入仓巡查包</h2>
       <span class="hint" id="package-stats"></span>
+      <span class="spacer"></span>
+      <button id="compact-btn" class="secondary" type="button">压缩覆盖索引</button>
     </div>
+    <p class="hint">同一段路复测多次后，旧覆盖矩形若被更高版矩形（单个或几个拼起来）完全盖住，可从索引中移除；包记录与摘要保留，框查只取剩余矩形。</p>
+    <div id="compact-result" class="result" hidden></div>
     <div class="table-wrap">
       <table>
         <thead>
